@@ -1,0 +1,14 @@
+{
+  "required": true,
+  "package": "dev.compilin.mc.shulkershop.mixins",
+  "compatibilityLevel": "JAVA_8",
+  "server": [
+    "GoalSelectorAccessMixin",
+    "ShulkerShopEntityMixin",
+    "ServerPlayerEntityMixin",
+    "MerchantScreenHandlerMixin"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}

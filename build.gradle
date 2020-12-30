@@ -30,6 +30,9 @@ dependencies {
 
     modImplementation "net.fabricmc:fabric-language-kotlin:${project.fabric_kotlin_version}"
 
+    // Non-Mod dependencies
+    implementation 'com.github.mawillers:multiindex:1.0.0'
+    compile 'com.electronwill.night-config:toml:3.6.0'
     // PSA: Some older mods, compiled on Loom 0.2.1, might have outdated Maven POMs.
     // You may need to force-disable transitiveness on them.
 }

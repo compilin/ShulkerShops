@@ -1,29 +1,29 @@
 {
   "schemaVersion": 1,
-  "id": "modid",
-  "version": "${version}",
+  "id": "shulkershops",
+  "version": "0.1",
 
-  "name": "Example Mod",
-  "description": "This is an example description! Tell everyone what your mod is about!",
+  "name": "Shulker Shops",
+  "description": "Trading (no-currency) shop mod",
   "authors": [
-    "Me!"
+    "Compilin <lin@compilin.dev>"
   ],
   "contact": {
-    "homepage": "https://fabricmc.net/",
-    "sources": "https://github.com/FabricMC/fabric-example-mod"
+    "homepage": "https://github.com/compilin/ShulkerShopsFabric",
+    "sources": "https://github.com/compilin/ShulkerShopsFabric"
   },
 
-  "license": "CC0-1.0",
+  "license": "MIT",
   "icon": "assets/modid/icon.png",
 
-  "environment": "*",
+  "environment": "server",
   "entrypoints": {
     "main": [
-      "net.fabricmc.example.ExampleModKt::init"
+      "dev.compilin.mc.shulkershop.SShopMod"
     ]
   },
   "mixins": [
-    "modid.mixins.json"
+    "shulkershops.mixins.json"
   ],
   "depends": {
     "fabricloader": ">=0.8.7",
