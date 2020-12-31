@@ -387,7 +387,7 @@ class ShulkerShop : Merchant {
             fun fromTag(tag: CompoundTag): BlockDimPos {
                 return BlockDimPos(
                     BlockPos(tag.getInt("X"), tag.getInt("Y"), tag.getInt("Z")),
-                    World.CODEC.parse(NbtOps.INSTANCE, tag.get("Dimension")).resultOrPartial(log::error)
+                    World.CODEC.parse(NbtOps.INSTANCE, tag.get("Dim")).resultOrPartial(log::error)
                         .orElse(World.OVERWORLD)
                 )
             }

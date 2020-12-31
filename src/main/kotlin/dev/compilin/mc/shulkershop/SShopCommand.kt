@@ -13,6 +13,9 @@ import com.mojang.brigadier.exceptions.CommandExceptionType
 import com.mojang.brigadier.exceptions.CommandSyntaxException
 import com.mojang.brigadier.tree.CommandNode
 import com.mojang.brigadier.tree.LiteralCommandNode
+import dev.compilin.mc.shulkershop.Config.CREATE_ITEM
+import dev.compilin.mc.shulkershop.Config.SELECTION_TIMEOUT
+import dev.compilin.mc.shulkershop.Config.SELECT_ITEM
 import dev.compilin.mc.shulkershop.SShopMod.Companion.getSelectionByPlayer
 import dev.compilin.mc.shulkershop.SShopMod.Permission.*
 import dev.compilin.mc.shulkershop.SShopMod.PlayerShopSelection
@@ -168,11 +171,11 @@ object SShopCommand {
         val player: ServerPlayerEntity = ctx.source.player
         when (ctx.nodes[2].node.name) {
             "selector" -> givePlayerItem(
-                player, Config.selectItem
+                player, SELECT_ITEM()
                     .createStack(1, false)
             )
             "creator" -> givePlayerItem(
-                player, Config.createItem
+                player, CREATE_ITEM()
                     .createStack(1, false)
             )
             else -> throw IllegalStateException("Unknown subcmd for /" + ctx.input)
@@ -216,6 +219,7 @@ object SShopCommand {
             ctx.source.sendFeedback(noShopSelectedMessage, true)
             return 0
         }
+        selected.get().refreshTimeout()
         val shop: ShulkerShop = selected.get().shop
         try {
             return when (nodeName(ctx, 1)) {
@@ -503,13 +507,17 @@ object SShopCommand {
     }
 
     private val noShopSelectedMessage: Text
-        get() = LiteralText("No shops selected! ")
-            .formatted(Formatting.YELLOW)
-            .append(
-                LiteralText("Sneak and right click with a ").formatted(Formatting.WHITE)
-                    .append(ItemStack(Config.selectItem.item).name)
-                    .append(" on a shulker shop to select it\n(note: selections will time-out after 5 minutes without activity)")
-            )
+        get() {
+            val message = LiteralText("No shops selected! ")
+                .formatted(Formatting.YELLOW)
+                .append(LiteralText("Sneak and right click with a ")/*.formatted(Formatting.WHITE)*/)
+                .append(SELECT_ITEM().item.name)
+                .append(" on a shulker shop to select it")
+            if (SELECTION_TIMEOUT() < 61) {
+                message.append("\n(note: selections will time-out after ${SELECTION_TIMEOUT()} minutes without activity)")
+            }
+            return message
+        }
 
     @Throws(CommandSyntaxException::class)
     private fun checkPermission(src: ServerCommandSource, shop: ShulkerShop, delete: Boolean): Boolean {

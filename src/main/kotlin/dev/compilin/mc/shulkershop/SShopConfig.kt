@@ -1,5 +1,6 @@
 package dev.compilin.mc.shulkershop
 
+import com.electronwill.nightconfig.core.Config
 import com.electronwill.nightconfig.core.ConfigSpec
 import com.electronwill.nightconfig.core.file.CommentedFileConfig
 import com.electronwill.nightconfig.core.file.FileNotFoundAction
@@ -11,18 +12,33 @@ import java.io.File
 import java.util.function.Predicate
 
 object Config {
-    private const val DEFAULT_CREATE_ITEM =
+
+    val CREATE_ITEM = SpecItem(
+        "create_item",
         "minecraft:flower_banner_pattern{display:{Name:'{\"text\":\"Shulker Shop Spawner\"}'," +
                 "Lore:['\"Right click on solid ground\"', '\"to create a shulker shop\"']}," +
-                "Enchantments:[{}]}"
-    private const val DEFAULT_SELECT_ITEM = "minecraft:stick"
+                "Enchantments:[{}]}",
+        "Item to right click with to create shops",
+        this::parseItem,
+        { key, defVal -> define(key, defVal, isValidItem) })
+    val SELECT_ITEM = SpecItem(
+        "select_item",
+        "minecraft:stick",
+        "Item to hold to select shops/open their inventories",
+        this::parseItem,
+        { key, defVal -> define(key, defVal, isValidItem) })
+    val SELECTION_TIMEOUT = SpecItem.unparsed(
+        "selection_timeout", 5, "Timeout duration (in minutes) of shop selections. " +
+                "Can be set between 1 and 60 minutes, or to 61 to disable timeout"
+    ) { key, defVal -> defineInRange(key, defVal, 1, 61) }
+
+    private val items = listOf(CREATE_ITEM, SELECT_ITEM, SELECTION_TIMEOUT)
 
     private val configFile = File("config/shulkershops.toml")
     private var config: CommentedFileConfig? = null
     private val spec by lazy {
         val spec = ConfigSpec()
-        spec.define("select_item", DEFAULT_SELECT_ITEM, isValidItem)
-        spec.define("create_item", DEFAULT_CREATE_ITEM, isValidItem)
+        items.forEach { it.runDefine(spec) }
 
         for (perm in SShopMod.Permission.values()) {
             spec.defineInRange("permissions.${perm.configKey}", perm.defaultPermLevel, 0, 4)
@@ -30,11 +46,6 @@ object Config {
 
         spec
     }
-
-    var selectItem = parseItem(DEFAULT_SELECT_ITEM)
-        private set
-    var createItem = parseItem(DEFAULT_CREATE_ITEM)
-        private set
 
     fun init() {
         val config = CommentedFileConfig.builder(configFile)
@@ -49,14 +60,14 @@ object Config {
             reload()
         } else {
             log.debug("No config file : initializing with default values")
-            config.set<String>("select_item", DEFAULT_SELECT_ITEM)
-            config.setComment("select_item", "Item to hold to select shops/open their inventories")
 
-            config.set<String>("create_item", DEFAULT_CREATE_ITEM)
-            config.setComment("create_item", "Item to right click with to create shops")
+            items.forEach {
+                config.set<Unit>(it.key, it.defaultValue)
+                config.setComment(it.key, it.description)
+            }
 
             for (perm in SShopMod.Permission.values()) {
-                config.set<Any>("permissions.${perm.configKey}", perm.defaultPermLevel)
+                config.set<Unit>("permissions.${perm.configKey}", perm.defaultPermLevel)
                 config.setComment("permissions.${perm.configKey}", perm.description)
             }
 
@@ -74,21 +85,17 @@ object Config {
         if (config == null) return
 
         config!!.load()
-        var corrected = false
         if (!spec.isCorrect(config)) {
             spec.correct(config) { _, path, incorrect, correct ->
                 log.warn("Config error: Corrected $incorrect to $correct at path $path")
-                corrected = true
             }
         }
 
-        selectItem = parseItem(config!!.get("select_item"))
-        createItem = parseItem(config!!.get("create_item"))
+        items.forEach { it.readValue(config!!) }
+
         for (perm in SShopMod.Permission.values()) {
             perm.permissionLevel = config!!.getInt("permissions.${perm.configKey}")
         }
-
-        if (corrected) config!!.save()
     }
 
     private fun parseItem(str: String): ItemStackArgument {
@@ -103,4 +110,39 @@ object Config {
     }
 
     private val isValidItem = Predicate<Any> { it is String && tryParseItem(it) != null }
+
+    /**
+     * Convenience class to declare a config spec node's default value and description together
+     */
+    data class SpecItem<C, V>(
+        val key: String,
+        val defaultValue: C,
+        val description: String,
+        val valueParser: (C) -> V,
+        val define: ConfigSpec.(String, C) -> Unit
+    ) {
+        private var value: V = valueParser(defaultValue)
+
+        internal fun runDefine(spec: ConfigSpec) {
+            define.invoke(spec, key, defaultValue)
+        }
+
+        internal fun readValue(config: Config) {
+            val confValue: C = config.get(key)
+            value = valueParser(confValue)
+        }
+
+        operator fun invoke() = value
+
+        companion object {
+            fun <T> unparsed(
+                key: String,
+                defaultValue: T,
+                comment: String,
+                define: ConfigSpec.(String, T) -> Unit
+            ): SpecItem<T, T> {
+                return SpecItem(key, defaultValue, comment, { it }, define)
+            }
+        }
+    }
 }

@@ -1,5 +1,7 @@
 package dev.compilin.mc.shulkershop
 
+import dev.compilin.mc.shulkershop.Config.CREATE_ITEM
+import dev.compilin.mc.shulkershop.Config.SELECT_ITEM
 import dev.compilin.mc.shulkershop.SShopMod.PlayerShopSelection
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents
 import net.fabricmc.fabric.api.event.player.UseBlockCallback
@@ -65,7 +67,7 @@ object SShopEventListener {
         val otherPlayerIsSelecting: Boolean = SShopMod.getSelectionByShop(shop)
             .map { sel -> sel.player.uuid != player.uuid }
             .orElse(false)
-        val selectItem = Config.selectItem
+        val selectItem = SELECT_ITEM()
         if (selectItem.test(player.mainHandStack) ||
             player.mainHandStack.isEmpty && selectItem.test(player.offHandStack)
         ) {
@@ -157,7 +159,7 @@ object SShopEventListener {
     fun onRightClickBlock(player: PlayerEntity, world: World, hand: Hand, hit: BlockHitResult): ActionResult {
         val holdingHand = if (!player.mainHandStack.isEmpty) Hand.MAIN_HAND else Hand.OFF_HAND
         val held: ItemStack = player.getStackInHand(holdingHand)
-        if (hand == Hand.MAIN_HAND && Config.createItem.test(held)) {
+        if (hand == Hand.MAIN_HAND && CREATE_ITEM().test(held)) {
             val blockState: BlockState = world.getBlockState(hit.blockPos)
             if (!blockState.isSolidBlock(world, hit.blockPos)) {
                 player.sendMessage(

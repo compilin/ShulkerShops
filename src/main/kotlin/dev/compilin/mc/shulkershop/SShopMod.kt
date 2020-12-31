@@ -145,21 +145,48 @@ class SShopMod : ModInitializer {
     class PlayerShopSelection(val player: PlayerEntity, val shop: ShulkerShop) {
         private var timeoutFuture: ScheduledFuture<*> =
             scheduler.schedule(this::cancelSelection, 5, TimeUnit.MINUTES)
+        private var messageFuture: ScheduledFuture<*> =
+            scheduler.scheduleAtFixedRate(this::refreshStatusMessage, 50, 2000, TimeUnit.MILLISECONDS)
 
+        @Volatile
         var isCurrent = true
             private set
 
+        @Synchronized
         internal fun refreshTimeout() {
             if (timeoutFuture.cancel(false)) {
                 timeoutFuture = scheduler.schedule(this::cancelSelection, 5, TimeUnit.MINUTES)
+            } else if (isCurrent) {
+                log.error("Couldn't cancel timeoutFuture ")
             }
         }
 
+        internal fun refreshStatusMessage() {
+            val message = LiteralText("Currently selected shop : \"")
+                .append(shop.name)
+                .append("\"")
+            if (timeoutFuture.getDelay(TimeUnit.SECONDS) < 20) {
+                message.append(" (About to expire!").formatted(Formatting.YELLOW)
+            } else if (timeoutFuture.getDelay(TimeUnit.MINUTES) < 2) {
+                message.append(" (expires soon)").formatted(Formatting.ITALIC)
+            }
+            if (isCurrent) { // Final check to avoid race conditions if cancelled while running
+                player.sendMessage(message, true)
+            }
+        }
+
+        /**
+         * This is called when the selection either times out or is cancelled for other reasons (e.g player logs out
+         * or selects another shop)
+         */
+        @Synchronized
         fun cancelSelection() {
+            messageFuture.cancel(false)
             timeoutFuture.cancel(false)
             isCurrent = false
             playerSelectionSequential.remove(this)
             shop.setSelectingPlayer(null)
+            player.sendMessage(LiteralText.EMPTY)
         }
     }
 
