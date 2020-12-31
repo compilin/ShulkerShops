@@ -52,7 +52,7 @@ object SShopEventListener {
     fun onEntityInteract(
         player: PlayerEntity, world: World, hand: Hand, entity: Entity, result: EntityHitResult?
     ): ActionResult {
-        if (hand === Hand.MAIN_HAND && entity is ShulkerEntity) {
+        if (!world.isClient && hand === Hand.MAIN_HAND && entity is ShulkerEntity) {
             val shop = (entity as ShulkerShopEntity).shop
             if (shop != null) {
                 onShopInteract(player, shop)
@@ -157,6 +157,7 @@ object SShopEventListener {
 
     @Suppress("UNUSED_PARAMETER")
     fun onRightClickBlock(player: PlayerEntity, world: World, hand: Hand, hit: BlockHitResult): ActionResult {
+        if (world !is ServerWorld) return ActionResult.PASS
         val holdingHand = if (!player.mainHandStack.isEmpty) Hand.MAIN_HAND else Hand.OFF_HAND
         val held: ItemStack = player.getStackInHand(holdingHand)
         if (hand == Hand.MAIN_HAND && CREATE_ITEM().test(held)) {
@@ -176,7 +177,7 @@ object SShopEventListener {
                 }
                 val shop = SShopMod.shopRegistry!!.newShulkerShop(player)
                 if (shop.spawnShulker(
-                        world as ServerWorld, player, hit.blockPos.offset(hit.side), hit.side.opposite
+                        world, player, hit.blockPos.offset(hit.side), hit.side.opposite
                     )
                 ) {
                     SShopMod.setPlayerSelection(player, shop)
@@ -202,6 +203,10 @@ object SShopEventListener {
 	   *********************************** */
 
     fun onShulkerSpawn(shulker: ShulkerEntity) {
+        if (shulker.world.isClient) {
+            log.error("onShulkerSpawn got called from ClientWorld!")
+            return
+        }
         if (SShopMod.areShopsLoaded()) {
             val shopID: UUID? = (shulker as ShulkerShopEntity).shopId
             if (shopID != null) {

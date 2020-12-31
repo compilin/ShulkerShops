@@ -4,7 +4,7 @@
   "version": "0.1",
 
   "name": "Shulker Shops",
-  "description": "Trading (no-currency) shop mod",
+  "description": "Trading (no virtual currency) shop mod",
   "authors": [
     "Compilin <lin@compilin.dev>"
   ],
@@ -16,7 +16,7 @@
   "license": "MIT",
   "icon": "assets/shulkershops/icon.png",
 
-  "environment": "server",
+  "environment": "*",
   "entrypoints": {
     "main": [
       "dev.compilin.mc.shulkershop.SShopMod"
@@ -32,6 +32,5 @@
     "minecraft": "1.16.x"
   },
   "suggests": {
-    "flamingo": "*"
   }
 }

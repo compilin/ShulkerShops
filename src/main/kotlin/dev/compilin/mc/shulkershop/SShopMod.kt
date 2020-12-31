@@ -192,7 +192,7 @@ class SShopMod : ModInitializer {
 
     companion object {
         private val playerSelection: MultiIndexContainer<PlayerShopSelection> = MultiIndexContainer.create()
-        private val playerSelectionSequential: SequentialIndex<PlayerShopSelection> =
+        val playerSelectionSequential: SequentialIndex<PlayerShopSelection> =
             playerSelection.createSequentialIndex()
         private val selectionByPlayer: UniqueIndex<UUID, PlayerShopSelection> =
             playerSelection.createHashedUniqueIndex { sel -> sel.player.uuid }

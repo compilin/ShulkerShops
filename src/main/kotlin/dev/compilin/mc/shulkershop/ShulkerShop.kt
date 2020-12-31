@@ -150,8 +150,10 @@ class ShulkerShop : Merchant {
     private fun sendCustomerOffers() {
         Preconditions.checkNotNull(customer, "Can't update offers for null customer")
         Preconditions.checkNotNull(customerWindowID, "Customer is set but window id is null!")
-        customer!!.sendTradeOffers(customerWindowID!!, getOffers(), 1, 0,
-            isLeveledMerchant, canRefreshTrades())
+        customer!!.sendTradeOffers(
+            customerWindowID!!, getOffers(), 1, 0,
+            isLeveledMerchant, canRefreshTrades()
+        )
     }
 
     fun openInventory(player: PlayerEntity) {
@@ -237,10 +239,17 @@ class ShulkerShop : Merchant {
             false, false
         )
         if (shulker != null) {
-            (shulker as ShulkerShopEntity).shopId = uuid
-            shulker.customName = name
-            setShulker(shulker)
-            return true
+            try {
+                (shulker as ShulkerShopEntity).shopId = uuid
+                shulker.customName = name
+                setShulker(shulker)
+                return true
+            } catch (ex: Throwable) { // If anything goes wrong
+                log.error("Got an exception during shulker spawning, removing the mob", ex)
+                shulker.remove()
+            }
+        } else {
+            log.error("Failed to spawn shulker")
         }
         return false
     }
@@ -394,7 +403,7 @@ class ShulkerShop : Merchant {
         }
     }
 
-    class ShopInventory internal constructor() : SimpleInventory(INVENTORY_SIZE) {
+    inner class ShopInventory internal constructor() : SimpleInventory(INVENTORY_SIZE) {
         /**
          * Holds a backup of all the slots that were modified during the last trade.
          * Gets cleared on new trades
@@ -427,7 +436,7 @@ class ShulkerShop : Merchant {
          */
         override fun getTags(): ListTag {
             val tags = ListTag()
-            
+
             for (i in 0 until size()) {
                 val itemStack = getStack(i)
                 if (!itemStack.isEmpty) {
@@ -437,7 +446,7 @@ class ShulkerShop : Merchant {
                     tags.add(compoundTag)
                 }
             }
-            
+
             return tags
         }
 
@@ -533,6 +542,10 @@ class ShulkerShop : Merchant {
                     backup[i] = null
                 }
             }
+        }
+
+        override fun canPlayerUse(player: PlayerEntity?): Boolean {
+            return player == selectingPlayer // Closes the inventory if selection times out
         }
     }
 

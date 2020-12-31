@@ -57,14 +57,14 @@ public class ShulkerShopEntityMixin extends GolemEntity implements ShulkerShopEn
 
     @Inject(at = @At("HEAD"), method = "writeCustomDataToTag")
     private void writeShopIdToTag(CompoundTag tag, CallbackInfo ci) {
-        if (shopId != null) {
+        if (!world.isClient && shopId != null) {
             tag.putUuid(tagKey, shopId);
         }
     }
 
     @Inject(at = @At("HEAD"), method = "readCustomDataFromTag")
     private void readShopIdFromTag(CompoundTag tag, CallbackInfo ci) {
-        if (tag.containsUuid(tagKey)) {
+        if (!world.isClient && tag.containsUuid(tagKey)) {
             shopId = tag.getUuid(tagKey);
             SShopEventListener.INSTANCE.onShulkerSpawn((ShulkerEntity) (Object)this);
         }
@@ -72,13 +72,14 @@ public class ShulkerShopEntityMixin extends GolemEntity implements ShulkerShopEn
 
     @Inject(at = @At("HEAD"), method = "damage", cancellable = true)
     private void checkDamage(DamageSource source, float amount, CallbackInfoReturnable<Boolean> cir) {
-        if (shopId != null) {
+        if (!world.isClient && shopId != null) {
             cir.setReturnValue(false);
         }
     }
 
     @Override
     public @NotNull GoalSelector clearShulkerAIGoals() {
+        if (world.isClient) throw new AssertionError();
         ((GoalSelectorAccess) targetSelector).getGoals().clear();
         ((GoalSelectorAccess) goalSelector).getGoals().clear();
         return goalSelector;

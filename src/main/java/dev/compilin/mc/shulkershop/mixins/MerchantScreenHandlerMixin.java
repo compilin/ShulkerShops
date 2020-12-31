@@ -26,7 +26,7 @@ public class MerchantScreenHandlerMixin {
      */
     @Inject(at = @At("HEAD"), method = "playYesSound", cancellable = true)
     void playYesSoundCheck(CallbackInfo ci) {
-        if (merchant instanceof ShulkerShop) {
+        if (!merchant.getMerchantWorld().isClient && merchant instanceof ShulkerShop) {
             BlockPos pos = Objects.requireNonNull(((ShulkerShop) merchant).getShulkerPos()).getPos();
             this.merchant.getMerchantWorld().playSound(pos.getX(), pos.getY(), pos.getZ(),
                     this.merchant.getYesSound(), SoundCategory.NEUTRAL, 1.0F, 1.0F, false);

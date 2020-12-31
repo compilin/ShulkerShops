@@ -32,7 +32,10 @@ dependencies {
 
     // Non-Mod dependencies
     implementation 'com.github.mawillers:multiindex:1.0.0'
-    compile 'com.electronwill.night-config:toml:3.6.0'
+    include 'com.github.mawillers:multiindex:1.0.0'
+    implementation 'com.electronwill.night-config:toml:3.6.0'
+    include 'com.electronwill.night-config:toml:3.6.0'
+    include 'com.electronwill.night-config:core:3.6.0'
     // PSA: Some older mods, compiled on Loom 0.2.1, might have outdated Maven POMs.
     // You may need to force-disable transitiveness on them.
 }
@@ -61,6 +64,7 @@ tasks.withType(JavaCompile) {
 // if it is present.
 // If you remove this task, sources will not be generated.
 task sourcesJar(type: Jar, dependsOn: classes) {
+    //noinspection GrDeprecatedAPIUsage
     classifier = "sources"
     from sourceSets.main.allSource
 }
@@ -69,15 +73,25 @@ jar {
     from "LICENSE"
 }
 
+remapJar {
+    // Includes the target MC version in the final JAR filename
+    archiveVersion = "${project.mod_version}-MC${project.minecraft_version}-fabric"
+}
+
 // configure the maven publication
 publishing {
     publications {
+        //noinspection GroovyAssignabilityCheck
         mavenJava(MavenPublication) {
             // add all the jars that should be included when publishing to maven
+            //noinspection GroovyAssignabilityCheck
             artifact(remapJar) {
+                //noinspection GroovyAssignabilityCheck
                 builtBy remapJar
             }
+            //noinspection GroovyAssignabilityCheck
             artifact(sourcesJar) {
+                //noinspection GroovyAssignabilityCheck
                 builtBy remapSourcesJar
             }
         }
