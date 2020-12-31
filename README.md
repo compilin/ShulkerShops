@@ -1,4 +1,4 @@
-![](src/main/resources/Banner.png)
+![](src/main/resources/assets/shulkershops/icon.png)
 
 Shulker Shops
 =============
@@ -6,9 +6,11 @@ Shulker Shops
 This is a Minecraft Forge server-side mod whose aim is to allow player to create currency-less
  (items for items) shops to sell or buy items with other players. A remake of the classic 
  "chest shop" kind of server plugin, but with a villager-like trading interface. And what better
- mod to be a shop clerk that one that's literally a box!
+ mod to be a shop clerk that one that's literally a box! [Here's a short video of what it looks like.](https://i.imgur.com/0usOePi.gifv)
  
-The mod is currently in a pre-release state and is not recommended for use on a live server. 
+The mod is currently in a pre-release state and is not recommended for use on a live server.
+
+![](src/main/resources/Banner.png)
 
 Usage
 =====
