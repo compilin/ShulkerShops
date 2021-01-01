@@ -367,7 +367,7 @@ class ShulkerShop : Merchant {
         nbt.putUuid("UUID", uuid)
         nbt.putUuid("OwnerUUID", ownerId)
         nbt.putUuid("ShulkerUUID", shulkerId)
-        nbt.put("ShulkerPos", shulkerPos!!.writeNBT())
+        nbt.put("ShulkerPos", shulkerPos!!.toTag())
         nbt.putString("Name", Text.Serializer.toJson(name))
         nbt.put("Inventory", inventory.tags)
         val offers = ListTag()
@@ -381,13 +381,14 @@ class ShulkerShop : Merchant {
      */
     class BlockDimPos internal constructor(val pos: BlockPos, val dim: RegistryKey<World>) {
 
-        fun writeNBT(): CompoundTag {
+        fun toTag(): CompoundTag {
             val nbt = CompoundTag()
             nbt.putInt("X", pos.x)
-            nbt.putInt("X", pos.y)
-            nbt.putInt("X", pos.z)
+            nbt.putInt("Y", pos.y)
+            nbt.putInt("Z", pos.z)
             val dimTag = World.CODEC.encodeStart(NbtOps.INSTANCE, dim)
-                .resultOrPartial(log::error).orElse(StringTag.of("minecraft:overworld"))
+                .resultOrPartial { log.error("Error in BlockDimPos#toTag : $it") }
+                .orElse(StringTag.of("minecraft:overworld"))
             nbt.put("Dim", dimTag)
             return nbt
         }
@@ -396,7 +397,8 @@ class ShulkerShop : Merchant {
             fun fromTag(tag: CompoundTag): BlockDimPos {
                 return BlockDimPos(
                     BlockPos(tag.getInt("X"), tag.getInt("Y"), tag.getInt("Z")),
-                    World.CODEC.parse(NbtOps.INSTANCE, tag.get("Dim")).resultOrPartial(log::error)
+                    World.CODEC.parse(NbtOps.INSTANCE, tag.get("Dim"))
+                        .resultOrPartial { log.error("Error in BlockDimPos#fromTag : $it") }
                         .orElse(World.OVERWORLD)
                 )
             }
