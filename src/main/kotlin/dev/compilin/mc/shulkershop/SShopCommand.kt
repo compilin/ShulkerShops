@@ -596,35 +596,37 @@ object SShopCommand {
     private fun getItemStack(
         ctx: CommandContext<ServerCommandSource>, argId: Int, countArg: String, itemArg: String,
         baseStack: ItemStack?
-    ): ItemStack {
-        return if (ctx.nodeName(argId) == "@hand" || ctx.nodeName(argId) == "@offhand") {
-            ctx.source.player.getStackInHand(
-                if (ctx.nodeName(argId) == "@hand") Hand.MAIN_HAND else Hand.OFF_HAND
-            ).copy()
-        } else {
-            val sellCount = IntegerArgumentType.getInteger(ctx, countArg)
-            val sellStack: ItemStack
-            if (baseStack != null) {
-                sellStack = ctx.getOptionalArgument<ItemStackArgument>(itemArg)
-                    .map { input: ItemStackArgument -> input.createStack(sellCount, false) }
-                    .orElseGet {
-                        val stack = baseStack.copy()
-                        stack.count = sellCount
-                        stack
-                    }
-            } else {
-                sellStack = ItemStackArgumentType.getItemStackArgument(ctx, itemArg).createStack(sellCount, false)
-            }
-            if (sellCount > sellStack.maxCount) {
-                throw SShopCommandException(
-                    java.lang.String.format(
-                        "Specified item count (%d) exceeds item's stack limit (%d)",
-                        sellCount, sellStack.maxCount
-                    )
-                ).create()
-            }
-            sellStack
+    ): ItemStack = if (ctx.nodeName(argId) == "@hand" || ctx.nodeName(argId) == "@offhand") {
+        val stack = ctx.source.player.getStackInHand(
+            if (ctx.nodeName(argId) == "@hand") Hand.MAIN_HAND else Hand.OFF_HAND
+        )
+        if (stack.isEmpty) {
+            throw SShopCommandException("Youd hand is empty!").create()
         }
+        stack.copy()
+    } else {
+        val count = IntegerArgumentType.getInteger(ctx, countArg)
+        val stack: ItemStack
+        if (baseStack != null) {
+            stack = ctx.getOptionalArgument<ItemStackArgument>(itemArg)
+                .map { input: ItemStackArgument -> input.createStack(count, false) }
+                .orElseGet {
+                    val copy = baseStack.copy()
+                    copy.count = count
+                    copy
+                }
+        } else {
+            stack = ItemStackArgumentType.getItemStackArgument(ctx, itemArg).createStack(count, false)
+        }
+        if (count > stack.maxCount) {
+            throw SShopCommandException(
+                java.lang.String.format(
+                    "Specified item count (%d) exceeds item's stack limit (%d)",
+                    count, stack.maxCount
+                )
+            ).create()
+        }
+        stack
     }
 
     fun printCommandNode(node: CommandNode<ServerCommandSource>): String {
