@@ -71,15 +71,10 @@ object SShopCommand {
             literal("shulker").then(
                 literal("give")
                     .requires(GIVE_MOD_ITEMS::check)
-                    .then(
-                        literal("selector")
-                            .executes { ctx: CommandContext<ServerCommandSource> -> executeGive(ctx) })
-                    .then(
-                        literal("creator")
-                            .executes { ctx: CommandContext<ServerCommandSource> -> executeGive(ctx) })
+                    .then(literal("selector").executes(this::executeGive))
+                    .then(literal("creator").executes(this::executeGive))
             ).then(
                 literal("delete")
-                    .requires(DELETE_OWN_SHOP::check)
                     .executes(this::executeOnShop)
                     .then( // text argument rather than literal to avoid having it auto-complete accidentally
                         argument("force", StringArgumentType.word())
@@ -97,7 +92,7 @@ object SShopCommand {
                     )
                 ).then(literal("edit").then(offersEditCommand))
             ).then(
-                literal("set").requires(EDIT_OWN_SHOP::check).then(
+                literal("set").then(
                     literal("name").then(
                         argument("name", MessageArgumentType.message())
                             .executes(this::executeOnShop)
@@ -106,14 +101,21 @@ object SShopCommand {
                     colorEnumArgument(
                         literal("color"),
                         { _: String, node: LiteralArgumentBuilder<ServerCommandSource> ->
-                            node.executes { this.executeOnShop(it) }
+                            node.executes(this::executeOnShop)
                         }
                     ).then(
                         literal("default")
                             .executes(this::executeOnShop)
                     )
                 )
+            ).then(
+                literal("config").requires { it.hasPermissionLevel(4) }.then(
+                    literal("save").executes(this::executeConfig)
+                ).then(
+                    literal("reload").executes(this::executeConfig)
+                )
             )
+
     private val offersAddCommand: ArgumentBuilder<ServerCommandSource, *>
         get() = itemStackArgument(
             literal("add"), "buycount", "buyitem", 64,
@@ -222,11 +224,11 @@ object SShopCommand {
         selected.get().refreshTimeout()
         val shop: ShulkerShop = selected.get().shop
         try {
-            return when (nodeName(ctx, 1)) {
+            return when (ctx.nodeName(1)) {
                 "delete" -> executeDelete(ctx, shop)
                 "offers" -> executeOffers(ctx, shop)
                 "set" -> executeSet(ctx, shop)
-                else -> throw IllegalArgumentException("Unknown subcmd:" + nodeName(ctx, 1))
+                else -> throw IllegalArgumentException("Unknown subcmd:" + ctx.nodeName(1))
             }
         } catch (ex: IndexOutOfBoundsException) {
             ctx.source.sendError(
@@ -247,7 +249,7 @@ object SShopCommand {
     @Throws(CommandSyntaxException::class)
     private fun executeOffers(ctx: CommandContext<ServerCommandSource>, shop: ShulkerShop): Int {
         shop.updateOffersStock()
-        when (if (ctx.nodes.size > 2) nodeName(ctx, 2) else "list") {
+        when (if (ctx.nodes.size > 2) ctx.nodeName(2) else "list") {
             "list" -> {
                 val message: MutableText = LiteralText("Current offers in ")
                     .append(shop.name.shallowCopy().formatted(Formatting.BOLD))
@@ -271,10 +273,10 @@ object SShopCommand {
                 }
                 val buyStack = getItemStack(ctx, 3, "buycount", "buyitem", null)
                 val sellStack = getItemStack(
-                    ctx, if (nodeName(ctx, 3) == "@hand" || nodeName(ctx, 3) == "@offhand") 4 else 5,
+                    ctx, if (ctx.nodeName(3) == "@hand" || ctx.nodeName(3) == "@offhand") 4 else 5,
                     "sellcount", "sellitem", null
                 )
-                val maxUses = getOptionalArgument<Int>(ctx, "maxuses").orElse(UNLIMITED)
+                val maxUses = ctx.getOptionalArgument<Int>("maxuses").orElse(UNLIMITED)
                 if (buyStack.count > 2 * buyStack.maxCount) {
                     ctx.source.sendError(
                         LiteralText(
@@ -329,7 +331,7 @@ object SShopCommand {
         val offer: ShulkerShopOffer =
             shop.shulkerOffers[offerId] // IndexOutOfBoundsException caught in executeOnShop
         val notice: Text = LiteralText("")
-        when (nodeName(ctx, 4)) {
+        when (ctx.nodeName(4)) {
             "bought" -> {
                 val buyStack = getItemStack(
                     ctx, 5, "buycount", "buyitem",
@@ -346,7 +348,7 @@ object SShopCommand {
             }
             "limit" -> {
                 val maxUses: Int
-                val limitType = if (ctx.nodes.size > 5) nodeName(ctx, 5) else null
+                val limitType = if (ctx.nodes.size > 5) ctx.nodeName(5) else null
                 when (limitType) {
                     null -> {
                         maxUses = UNLIMITED
@@ -393,7 +395,7 @@ object SShopCommand {
     @Throws(CommandSyntaxException::class)
     private fun executeSet(ctx: CommandContext<ServerCommandSource>, shop: ShulkerShop): Int {
         val player: PlayerEntity = ctx.source.player
-        return when (nodeName(ctx, 2)) {
+        return when (ctx.nodeName(2)) {
             "name" -> {
                 var message: MutableText = LiteralText("")
                 var name: Text = MessageArgumentType.getMessage(ctx, "name")
@@ -425,7 +427,7 @@ object SShopCommand {
                 1
             }
             "color" -> {
-                val colorArg = nodeName(ctx, 3)
+                val colorArg = ctx.nodeName(3)
                 val colorIndex = if (colorArg == "default") 16 else dyeColors[colorArg]!!.id
                 val shulker: ShulkerEntity? = shop.getShulker()
                 if (shulker == null) {
@@ -454,7 +456,7 @@ object SShopCommand {
         if (!checkPermission(ctx.source, shop, true)) {
             return 0
         }
-        val force = getOptionalArgument<String>(ctx, "force")
+        val force = ctx.getOptionalArgument<String>("force")
             .map { it.toLowerCase() == "force" }
             .orElse(false)
         if (force && !FORCE_DELETE_SHOP.checkOrSendError(ctx.source)) return 0
@@ -492,18 +494,42 @@ object SShopCommand {
         return 1
     }
 
+    fun executeConfig(ctx: CommandContext<ServerCommandSource>): Int {
+        return when (ctx.nodeName(2)) {
+            "save" -> {
+                Config.save()
+                ctx.source.sendFeedback(LiteralText("Successfully saved config to disk"), true)
+                1
+            }
+            "reload" -> {
+                Config.reload()
+                ctx.source.sendFeedback(LiteralText("Successfully reloaded config from disk"), true)
+                1
+            }
+            else -> {
+                log.error("Unrecognized config command argument : ${ctx.input}")
+                throw SShopCommandException("Unknown subcommand").create()
+            }
+        }
+    }
+
     /*	******************
 		 Common utilities
 		****************** */
-    private inline fun <reified T> getOptionalArgument(
-        ctx: CommandContext<ServerCommandSource>,
-        name: String
-    ): Optional<T> {
-        return try {
-            Optional.of(ctx.getArgument(name, T::class.java))
-        } catch (ex: IllegalArgumentException) {
-            Optional.empty()
-        }
+
+    inline fun <reified T> CommandContext<ServerCommandSource>.getArgument(name: String): T =
+        getArgument(name, T::class.java)
+
+    internal inline fun <reified T> CommandContext<ServerCommandSource>.getOptionalArgument(name: String): Optional<T> =
+        getOptionalArgument(name) { ctx, argName -> ctx.getArgument(argName, T::class.java) }
+
+    internal inline fun <T> CommandContext<ServerCommandSource>.getOptionalArgument(
+        name: String,
+        parser: (CommandContext<ServerCommandSource>, String) -> T
+    ): Optional<T> = try {
+        Optional.of(parser(this, name))
+    } catch (ex: IllegalArgumentException) {
+        Optional.empty()
     }
 
     private val noShopSelectedMessage: Text
@@ -571,15 +597,15 @@ object SShopCommand {
         ctx: CommandContext<ServerCommandSource>, argId: Int, countArg: String, itemArg: String,
         baseStack: ItemStack?
     ): ItemStack {
-        return if (nodeName(ctx, argId) == "@hand" || nodeName(ctx, argId) == "@offhand") {
+        return if (ctx.nodeName(argId) == "@hand" || ctx.nodeName(argId) == "@offhand") {
             ctx.source.player.getStackInHand(
-                if (nodeName(ctx, argId) == "@hand") Hand.MAIN_HAND else Hand.OFF_HAND
+                if (ctx.nodeName(argId) == "@hand") Hand.MAIN_HAND else Hand.OFF_HAND
             ).copy()
         } else {
             val sellCount = IntegerArgumentType.getInteger(ctx, countArg)
             val sellStack: ItemStack
             if (baseStack != null) {
-                sellStack = getOptionalArgument<ItemStackArgument>(ctx, itemArg)
+                sellStack = ctx.getOptionalArgument<ItemStackArgument>(itemArg)
                     .map { input: ItemStackArgument -> input.createStack(sellCount, false) }
                     .orElseGet {
                         val stack = baseStack.copy()
@@ -641,8 +667,8 @@ object SShopCommand {
         }
     }
 
-    private fun nodeName(ctx: CommandContext<ServerCommandSource>, id: Int): String {
-        return ctx.nodes[id].node.name
+    private fun CommandContext<ServerCommandSource>.nodeName(id: Int): String {
+        return nodes[id].node.name
     }
 
     private fun interface OptionalMapper<T, U> {

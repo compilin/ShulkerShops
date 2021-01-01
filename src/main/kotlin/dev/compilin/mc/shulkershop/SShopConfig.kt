@@ -96,6 +96,12 @@ object Config {
         }
     }
 
+    fun save() {
+        if (config == null) return
+
+        config!!.save()
+    }
+
     private fun parseItem(str: String): ItemStackArgument {
         val reader = ItemStringReader(StringReader(str), false).consume()
         return ItemStackArgument(reader.item, reader.tag)
