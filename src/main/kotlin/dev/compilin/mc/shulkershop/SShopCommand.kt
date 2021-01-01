@@ -537,7 +537,7 @@ object SShopCommand {
             val message = LiteralText("No shops selected! ")
                 .formatted(Formatting.YELLOW)
                 .append(LiteralText("Sneak and right click with a ")/*.formatted(Formatting.WHITE)*/)
-                .append(SELECT_ITEM().item.name)
+                .append(SELECT_ITEM().createStack(1, false).toHoverableText())
                 .append(" on a shulker shop to select it")
             if (SELECTION_TIMEOUT() < 61) {
                 message.append("\n(note: selections will time-out after ${SELECTION_TIMEOUT()} minutes without activity)")
