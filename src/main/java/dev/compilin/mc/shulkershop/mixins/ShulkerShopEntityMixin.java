@@ -55,10 +55,13 @@ public class ShulkerShopEntityMixin extends GolemEntity implements ShulkerShopEn
         this.shop = shop;
     }
 
-    @Inject(at = @At("HEAD"), method = "writeCustomDataToTag")
+    @Inject(at = @At("TAIL"), method = "writeCustomDataToTag")
     private void writeShopIdToTag(CompoundTag tag, CallbackInfo ci) {
         if (!world.isClient && shopId != null) {
             tag.putUuid(tagKey, shopId);
+            /* We set NoAI on save and remove it on load in case the world gets loaded without the mod at any point, the shulker won't move or attack
+             * players */
+            tag.putBoolean("NoAI", true);
         }
     }
 
@@ -66,6 +69,7 @@ public class ShulkerShopEntityMixin extends GolemEntity implements ShulkerShopEn
     private void readShopIdFromTag(CompoundTag tag, CallbackInfo ci) {
         if (!world.isClient && tag.containsUuid(tagKey)) {
             shopId = tag.getUuid(tagKey);
+            tag.remove("NoAI");
             SShopEventListener.INSTANCE.onShulkerSpawn((ShulkerEntity) (Object)this);
         }
     }
