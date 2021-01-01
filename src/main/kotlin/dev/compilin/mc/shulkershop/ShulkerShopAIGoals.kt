@@ -4,8 +4,6 @@ import net.minecraft.entity.ai.TargetPredicate
 import net.minecraft.entity.ai.goal.Goal
 import net.minecraft.entity.mob.ShulkerEntity
 import net.minecraft.entity.player.PlayerEntity
-import net.minecraft.predicate.entity.EntityPredicate
-import net.minecraft.predicate.entity.EntityPredicates
 import net.minecraft.server.network.ServerPlayerEntity
 import java.util.*
 

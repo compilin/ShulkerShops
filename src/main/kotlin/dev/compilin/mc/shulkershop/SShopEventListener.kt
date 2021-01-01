@@ -147,22 +147,21 @@ object SShopEventListener {
     @Suppress("UNUSED_PARAMETER")
     fun onRightClickBlock(player: PlayerEntity, world: World, hand: Hand, hit: BlockHitResult): ActionResult {
         if (world !is ServerWorld) return ActionResult.PASS
-        val holdingHand = if (!player.mainHandStack.isEmpty) Hand.MAIN_HAND else Hand.OFF_HAND
-        val held: ItemStack = player.getStackInHand(holdingHand)
+        val held: ItemStack = player.mainHandStack
         if (hand == Hand.MAIN_HAND && CREATE_ITEM().test(held)) {
             val blockState: BlockState = world.getBlockState(hit.blockPos)
             if (!blockState.isSolidBlock(world, hit.blockPos)) {
                 player.sendMessage(
                     LiteralText("Target position needs to be on a solid block").formatted(Formatting.RED)
                 )
-            } else if (!world.isSpaceEmpty(ShulkerLidCollisions.getLidCollisionBox(hit.blockPos, hit.side))) {
+            } else if (!world.isSpaceEmpty(ShulkerLidCollisions.getLidCollisionBox(hit.blockPos.offset(hit.side), hit.side))) {
                 player.sendMessage(
                     LiteralText("Target position needs empty space for the shulker").formatted(Formatting.RED)
                 )
             } else {
                 if (!player.abilities.creativeMode) {
                     held.decrement(1)
-                    player.setStackInHand(holdingHand, if (held.isEmpty) ItemStack.EMPTY else held)
+                    player.setStackInHand(Hand.MAIN_HAND, if (held.isEmpty) ItemStack.EMPTY else held)
                 }
                 val shop = SShopMod.shopRegistry!!.newShulkerShop(player)
                 if (shop.spawnShulker(
