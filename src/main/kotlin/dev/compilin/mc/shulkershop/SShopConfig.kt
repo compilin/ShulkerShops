@@ -15,7 +15,7 @@ object Config {
 
     val CREATE_ITEM = SpecItem(
         "create_item",
-        """minecraft:flower_banner_pattern{display:{Name:'{"text":"Shulker Shop Spawner"}',Lore:['"Right click on solid ground"', '"to create a shulker shop"']},Enchantments:[{}]}""",
+        """minecraft:flower_banner_pattern{display:{Name:'{"text":"Shulker Shop Spawner"}',Lore:['"Right click on solid ground"', '"to create a shulker shop"']},HideFlags:32,Enchantments:[{}]}""",
         "Item to right click with to create shops",
         this::parseItem,
         { key, defVal -> define(key, defVal, isValidItem) })
