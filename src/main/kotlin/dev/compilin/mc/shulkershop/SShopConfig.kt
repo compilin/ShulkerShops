@@ -17,18 +17,25 @@ object Config {
         "create_item",
         """minecraft:flower_banner_pattern{display:{Name:'{"text":"Shulker Shop Spawner"}',Lore:['"Right click on solid ground"', '"to create a shulker shop"']},HideFlags:32,Enchantments:[{}]}""",
         "Item to right click with to create shops",
-        this::parseItem,
-        { key, defVal -> define(key, defVal, isValidItem) })
+        this::parseItem
+    ) { key, defVal -> define(key, defVal, isValidItem) }
+
     val SELECT_ITEM = SpecItem(
         "select_item",
         "minecraft:stick",
         "Item to hold to select shops/open their inventories",
-        this::parseItem,
-        { key, defVal -> define(key, defVal, isValidItem) })
+        this::parseItem
+    ) { key, defVal -> define(key, defVal, isValidItem) }
+
     val SELECTION_TIMEOUT = SpecItem.unparsed(
-        "selection_timeout", 5, "Timeout duration (in minutes) of shop selections. " +
-                "Can be set between 1 and 60 minutes, or to 61 to disable timeout"
-    ) { key, defVal -> defineInRange(key, defVal, 1, 61) }
+        "selection_timeout",
+        5,
+        "Timeout duration (in minutes) of shop selections. " +
+                "Can be set between 1 and 60 minutes, or to 61 to disable timeout",
+        { key, defVal -> defineInRange(key, defVal, 1, 61) })
+
+    // Might need to debug the config system so we can't have this in the config file
+    val DEBUG get() = System.getProperty("shulkershop.debug", "false") == "true"
 
     private val items = listOf(CREATE_ITEM, SELECT_ITEM, SELECTION_TIMEOUT)
 
