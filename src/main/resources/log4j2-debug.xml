@@ -51,7 +51,7 @@
         </RollingRandomAccessFile>
     </Appenders>
     <Loggers>
-        <Logger level="TRACE" name="shulkershop" additivity="false">
+        <Logger level="INFO" name="shulkershop" additivity="false">
             <AppenderRef ref="SysOut"/>
             <AppenderRef ref="ServerGuiConsole"/>
         </Logger>

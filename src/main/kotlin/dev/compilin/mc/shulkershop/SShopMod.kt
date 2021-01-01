@@ -11,8 +11,10 @@ import net.minecraft.server.command.ServerCommandSource
 import net.minecraft.text.LiteralText
 import net.minecraft.text.Text
 import net.minecraft.util.Formatting
+import org.apache.logging.log4j.Level
 import org.apache.logging.log4j.LogManager
 import org.apache.logging.log4j.Logger
+import org.apache.logging.log4j.core.LoggerContext
 import java.util.*
 import java.util.concurrent.Executors
 import java.util.concurrent.ScheduledFuture
@@ -25,6 +27,12 @@ class SShopMod : ModInitializer {
 
     override fun onInitialize() {
         log.info("Initializing mod ShulkerShops")
+        if (Config.DEBUG) {
+            val logContext = LogManager.getContext(false) as LoggerContext
+            logContext.configuration.getLoggerConfig(MODID).level = Level.ALL
+            logContext.updateLoggers()
+            log.trace("Enabled debug mode!")
+        }
         Config.init()
         SShopEventListener.initializeListeners()
 
@@ -41,6 +49,9 @@ class SShopMod : ModInitializer {
 
         CommandRegistrationCallback.EVENT.register { dispatcher, _ ->
             SShopCommand.register(dispatcher)
+            if (Config.DEBUG) {
+                SShopDebugCommand.register(dispatcher)
+            }
         }
         log.debug("Finished initializing")
     }
@@ -98,7 +109,7 @@ class SShopMod : ModInitializer {
         ),
         GIVE_MOD_ITEMS(
             "give_items", 2,
-            "Can give themselves the mod's config item or shop creator item",
+            "Can give themselves the mod's select item or shop creator item",
             "You do not have permission to use the give subcommand"
         ),
         FORCE_DELETE_SHOP(
@@ -186,7 +197,7 @@ class SShopMod : ModInitializer {
             isCurrent = false
             playerSelectionSequential.remove(this)
             shop.setSelectingPlayer(null)
-            player.sendMessage(LiteralText.EMPTY)
+            player.sendMessage(LiteralText.EMPTY, true)
         }
     }
 

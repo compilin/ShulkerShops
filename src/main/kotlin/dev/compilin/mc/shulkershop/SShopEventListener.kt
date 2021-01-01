@@ -16,7 +16,6 @@ import net.minecraft.server.MinecraftServer
 import net.minecraft.server.network.ServerPlayerEntity
 import net.minecraft.server.world.ServerWorld
 import net.minecraft.text.LiteralText
-import net.minecraft.text.MutableText
 import net.minecraft.util.ActionResult
 import net.minecraft.util.Formatting
 import net.minecraft.util.Hand
@@ -117,29 +116,19 @@ object SShopEventListener {
                 // Previous selection was empty or a different shop
                 check(SShopMod.setPlayerSelection(player, shop)) { "Couldn't add selection" }
                 if (sneak) {
-                    val message: MutableText = LiteralText(
-                        java.lang.String.format(
-                            "§aShulker shop \"§l%s§r§a\" selected§r", // TODO figure out if this syntax has a reason to be
-                            shop.name.string
-                        )
-                    )
+                    val message = LiteralText("Shulker shop \"").formatted(Formatting.GREEN)
+                        .append(shop.name.shallowCopy().formatted(Formatting.BOLD))
+                        .append(LiteralText("\" selected").formatted(Formatting.GREEN))
                     if (shop.ownerId != player.uuid) {
                         message.append(LiteralText(" (this is someone else's shop. Edit responsibly)"))
                     }
-                    if (prevSelection.isPresent) {
-                        message.append(". Previous shop unselected")
-                    }
-                    message.append(
-                        LiteralText(
-                            ". Players can't shop while you're editting so remember to unselect it afterward"
-                        )
-                            .formatted(Formatting.WHITE)
-                    )
                     player.sendMessage(message)
                 }
             } else if (sneak) {
                 SShopMod.unsetPlayerSelection(player.uuid)
                 player.sendMessage(LiteralText("Shulker shop unselected"))
+            } else {
+                prevSelection.get().refreshTimeout()
             }
             if (!sneak) {
                 shop.openInventory(player)
