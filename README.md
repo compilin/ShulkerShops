@@ -15,10 +15,10 @@ The mod is currently in a pre-release state and is not recommended for use on a 
 Usage
 =====
 
-/shulker command
+/sshop command
 ----------------
 
-Setting up is done via the `/shulker` command, and all subcommand except for `give` require to select a shop beforehand (see [Selection](#selection)).
+Setting up is done via the `/sshop` command, and all subcommand except for `give` require to select a shop beforehand (see [Selection](#selection)).
 
 General note about specifying items: Wherever you need to specify an item count and/or type, the command allows the `@hand` and `@offhand` specifiers, what's in your main or off hand as bought or sold item (it will come in **hand**y for items with complex data like written books or enchanted weapons). In these cases the specifier will replace both item count and type. You can always change the count afterwards. If you don't use the hand specifiers, then the syntax for item type is the same as for the vanilla /give command, see the [Minecraft Wiki](https://minecraft.gamepedia.com/Commands/give#Examples).
 
@@ -33,8 +33,8 @@ Here's the current subcommands for (`<…>` indicate a parameter, to replace wit
     * `set color <color>`: Set the shulker color. Accept any dye color, or "default" for the classic shulker light purple.
  * `offers`: Lists the shop's offers
     * `offers add <bought> <sold> <limit>`: Adds a new offer. <bought> and <sold> are quantity + item (accepts @hand/@offhand). Limit is how many times this offer may be used, or `unlimited`. Uses are limited by the shop's stock but you might want to limit some offer's uses, for instance if you're buying multiple things for the same price and are only interested in a limited amount of each of them.
-        * `/shulker offers add 1 diamond 64 minecraft:sea_pickle 10` will add an offer for which players can spend one diamond to get a stack of sea pickles (what a bargain), and the offer may only be used 10 times.
-        * `/shulker offers add @hand @offhand` will set the price to what and how many you have in your main hand, and the traded good to what and how many you have in your off-hand
+        * `/sshop offers add 1 diamond 64 minecraft:sea_pickle 10` will add an offer for which players can spend one diamond to get a stack of sea pickles (what a bargain), and the offer may only be used 10 times.
+        * `/sshop offers add @hand @offhand` will set the price to what and how many you have in your main hand, and the traded good to what and how many you have in your off-hand
     * `offers edit <id> …`: Edits an offer. The id is the number of the offer in the list
         * `… bought <buy count> <buy item>`: Changes the bought item count and/or type (accepts @hand/@offhand). 
         You can omit the item type if you only want to change the count.
@@ -46,6 +46,7 @@ Here's the current subcommands for (`<…>` indicate a parameter, to replace wit
             * `… set <limit>`: Set the current limit to &lt;limit&gt;.
             * `… add <limit>`: Adds &lt;limit&gt; to the current value, &lt;limit&gt; may be negative to remove uses.
     * `offers delete <id>`: Deletes the specified offer
+ * `config <reload|save>`: Reloads or saves the config from/to disk. Note that changes to some settings won't take effect until the next restart, like `command_word`
 
 Mod concepts
 ------------
@@ -65,7 +66,7 @@ You may set a use limit on offers to specify how many times they can be used. Yo
 Config
 ======
 
-The mod has two configurable items: the item to select shops, and the one to create them. By default the first one is just a regular stick, and the second one is a banner pattern with a custom name, description ("lore") and a fake enchantment tag for the visual effect. Be careful not to put a basic items with no tags for shop creation, as this behaviour will occur whenever the player right clicks the ground with it. 
+You can change some of the mod's settings via the `<server or .minecraft directory>/config/shulkershop.toml` file. Run the game with the mod once to generate the file initially. The mod has two configurable items: the item to select shops, and the one to create them. By default the first one is just a regular stick, and the second one is a banner pattern with a custom name, description ("lore") and a fake enchantment tag for the visual effect. Be careful not to put a basic items with no tags for shop creation, as this behaviour will occur whenever the player right clicks the ground with it.
     
 ### Permissions
 
@@ -78,5 +79,5 @@ This mod defines a number of permissions. Asterisks* means they are restricted t
  * `others.inventory`⚠️, `.delete`⚠️, `.edit`⚠️: Same as above but for another player's shop
  * `change_owner`⚠️: Change a shop's owner. Useful for creating a shop for another player as an operator.
  * `make_anonymous`⚠️: Allow giving names to shops that do not contain your username. As of now this is the editor's name, not the owner's, therefore it only makes sense for one's own shops.
- * `give_items`⚠️: Use the /shulker give command
+ * `give_items`⚠️: Use the `/sshop give` command
  * `force_delete`⚠️: Force-delete a shop, allowing to delete shops with non-empty inventories.

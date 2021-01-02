@@ -66,7 +66,7 @@ object SShopEventListener {
         val otherPlayerIsSelecting: Boolean = SShopMod.getSelectionByShop(shop)
             .map { sel -> sel.player.uuid != player.uuid }
             .orElse(false)
-        val selectItem = SELECT_ITEM()
+        val selectItem = SELECT_ITEM
         if (selectItem.test(player.mainHandStack) ||
             player.mainHandStack.isEmpty && selectItem.test(player.offHandStack)
         ) {
@@ -148,7 +148,7 @@ object SShopEventListener {
     fun onRightClickBlock(player: PlayerEntity, world: World, hand: Hand, hit: BlockHitResult): ActionResult {
         if (world !is ServerWorld) return ActionResult.PASS
         val held: ItemStack = player.mainHandStack
-        if (hand == Hand.MAIN_HAND && CREATE_ITEM().test(held)) {
+        if (hand == Hand.MAIN_HAND && CREATE_ITEM.test(held)) {
             val blockState: BlockState = world.getBlockState(hit.blockPos)
             if (!blockState.isSolidBlock(world, hit.blockPos)) {
                 player.sendMessage(

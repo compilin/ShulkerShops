@@ -68,7 +68,7 @@ object SShopCommand {
     // Currying for brievety
     private val rootCommand: LiteralArgumentBuilder<ServerCommandSource>
         get() =// Currying for brievety
-            literal("shulker").then(
+            literal(Config.COMMAND_WORD).then(
                 literal("give")
                     .requires(GIVE_MOD_ITEMS::check)
                     .then(literal("selector").executes(this::executeGive))
@@ -173,12 +173,10 @@ object SShopCommand {
         val player: ServerPlayerEntity = ctx.source.player
         when (ctx.nodes[2].node.name) {
             "selector" -> givePlayerItem(
-                player, SELECT_ITEM()
-                    .createStack(1, false)
+                player, SELECT_ITEM.createStack(1, false)
             )
             "creator" -> givePlayerItem(
-                player, CREATE_ITEM()
-                    .createStack(1, false)
+                player, CREATE_ITEM.createStack(1, false)
             )
             else -> throw IllegalStateException("Unknown subcmd for /" + ctx.input)
         }
@@ -537,10 +535,10 @@ object SShopCommand {
             val message = LiteralText("No shops selected! ")
                 .formatted(Formatting.YELLOW)
                 .append(LiteralText("Sneak and right click with a ")/*.formatted(Formatting.WHITE)*/)
-                .append(SELECT_ITEM().createStack(1, false).toHoverableText())
+                .append(SELECT_ITEM.createStack(1, false).toHoverableText())
                 .append(" on a shulker shop to select it")
-            if (SELECTION_TIMEOUT() < 61) {
-                message.append("\n(note: selections will time-out after ${SELECTION_TIMEOUT()} minutes without activity)")
+            if (SELECTION_TIMEOUT < 61) {
+                message.append("\n(note: selections will time-out after $SELECTION_TIMEOUT minutes without activity)")
             }
             return message
         }

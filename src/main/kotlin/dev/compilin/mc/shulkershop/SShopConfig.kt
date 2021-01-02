@@ -1,6 +1,5 @@
 package dev.compilin.mc.shulkershop
 
-import com.electronwill.nightconfig.core.Config
 import com.electronwill.nightconfig.core.ConfigSpec
 import com.electronwill.nightconfig.core.file.CommentedFileConfig
 import com.electronwill.nightconfig.core.file.FileNotFoundAction
@@ -10,40 +9,54 @@ import net.minecraft.command.argument.ItemStackArgument
 import net.minecraft.command.argument.ItemStringReader
 import java.io.File
 import java.util.function.Predicate
+import kotlin.properties.ReadOnlyProperty
+import kotlin.reflect.KProperty
 
 object Config {
 
-    val CREATE_ITEM = SpecItem(
+    private val configItems = mutableListOf<SpecItem<*, *>>()
+
+    val CREATE_ITEM: ItemStackArgument by SpecItem(
         "create_item",
         """minecraft:flower_banner_pattern{display:{Name:'{"text":"Shulker Shop Spawner"}',Lore:['"Right click on solid ground"', '"to create a shulker shop"']},HideFlags:32,Enchantments:[{}]}""",
         "Item to right click with to create shops",
         this::parseItem
     ) { key, defVal -> define(key, defVal, isValidItem) }
 
-    val SELECT_ITEM = SpecItem(
+    val SELECT_ITEM: ItemStackArgument by SpecItem(
         "select_item",
         "minecraft:stick",
         "Item to hold to select shops/open their inventories",
         this::parseItem
     ) { key, defVal -> define(key, defVal, isValidItem) }
 
-    val SELECTION_TIMEOUT = SpecItem.unparsed(
+    val SELECTION_TIMEOUT: Int by SpecItem.unparsed(
         "selection_timeout",
         5,
         "Timeout duration (in minutes) of shop selections. " +
                 "Can be set between 1 and 60 minutes, or to 61 to disable timeout",
         { key, defVal -> defineInRange(key, defVal, 1, 61) })
 
+    val COMMAND_WORD: String by SpecItem.unparsed(
+        "command_word",
+        "sshop",
+        "First word to register as root of the mod's command. Not recommended to change unless it conflicts with other mods. " +
+                "May only contain basic letters",
+        { key, defVal ->
+            define(key, defVal) { it is String && it.matches(Regex("^[a-zA-Z]+$")) }
+        }
+    )
+
     // Might need to debug the config system so we can't have this in the config file
     val DEBUG get() = System.getProperty("shulkershop.debug", "false") == "true"
 
-    private val items = listOf(CREATE_ITEM, SELECT_ITEM, SELECTION_TIMEOUT)
-
     private val configFile = File("config/shulkershops.toml")
-    private var config: CommentedFileConfig? = null
+    private val config: CommentedFileConfig = CommentedFileConfig.builder(configFile)
+        .onFileNotFound(FileNotFoundAction.CREATE_EMPTY)
+        .build()
     private val spec by lazy {
         val spec = ConfigSpec()
-        items.forEach { it.runDefine(spec) }
+        configItems.forEach { it.runDefine(spec) }
 
         for (perm in SShopMod.Permission.values()) {
             spec.defineInRange("permissions.${perm.configKey}", perm.defaultPermLevel, 0, 4)
@@ -53,11 +66,6 @@ object Config {
     }
 
     fun init() {
-        val config = CommentedFileConfig.builder(configFile)
-            .onFileNotFound(FileNotFoundAction.CREATE_EMPTY)
-            .build()
-        this.config = config
-
         if (configFile.exists()) {
             log.debug("Loading config from file")
             config.load()
@@ -66,7 +74,7 @@ object Config {
         } else {
             log.debug("No config file : initializing with default values")
 
-            items.forEach {
+            configItems.forEach {
                 config.set<Unit>(it.key, it.defaultValue)
                 config.setComment(it.key, it.description)
             }
@@ -87,26 +95,26 @@ object Config {
     }
 
     fun reload() {
-        if (config == null) return
-
-        config!!.load()
+        config.load()
         if (!spec.isCorrect(config)) {
-            spec.correct(config) { _, path, incorrect, correct ->
+            spec.correct(config) { action, path, incorrect, correct ->
+                if (action == ConfigSpec.CorrectionAction.ADD) {
+                    configItems.find { it.key == path.joinToString(".") }?.description
+                        ?.let { config.setComment(path, it) }
+                }
                 log.warn("Config error: Corrected $incorrect to $correct at path $path")
             }
         }
 
-        items.forEach { it.readValue(config!!) }
+        configItems.forEach { it.readValue(config) }
 
         for (perm in SShopMod.Permission.values()) {
-            perm.permissionLevel = config!!.getInt("permissions.${perm.configKey}")
+            perm.permissionLevel = config.getInt("permissions.${perm.configKey}")
         }
     }
 
     fun save() {
-        if (config == null) return
-
-        config!!.save()
+        config.save()
     }
 
     private fun parseItem(str: String): ItemStackArgument {
@@ -131,19 +139,23 @@ object Config {
         val description: String,
         val valueParser: (C) -> V,
         val define: ConfigSpec.(String, C) -> Unit
-    ) {
+    ) : ReadOnlyProperty<Config, V> {
         private var value: V = valueParser(defaultValue)
+
+        init {
+            configItems.add(this)
+        }
 
         internal fun runDefine(spec: ConfigSpec) {
             define.invoke(spec, key, defaultValue)
         }
 
-        internal fun readValue(config: Config) {
+        internal fun readValue(config: CommentedFileConfig) {
             val confValue: C = config.get(key)
             value = valueParser(confValue)
         }
 
-        operator fun invoke() = value
+        override operator fun getValue(thisRef: Config, property: KProperty<*>): V = value
 
         companion object {
             fun <T> unparsed(
@@ -155,5 +167,6 @@ object Config {
                 return SpecItem(key, defaultValue, comment, { it }, define)
             }
         }
+
     }
 }

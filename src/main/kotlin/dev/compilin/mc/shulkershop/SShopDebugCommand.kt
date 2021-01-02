@@ -22,7 +22,7 @@ object SShopDebugCommand {
     }
 
     val debugCommand: LiteralArgumentBuilder<ServerCommandSource>
-        get() = literal("shulkerdebug")
+        get() = literal("${Config.COMMAND_WORD}debug")
             .requires { it.hasPermissionLevel(4) }
             .then(
                 literal("cancelselection").executes(this::cancelSelection).then(
