@@ -47,6 +47,13 @@ object Config {
         }
     )
 
+    val FORMATTING_CHAR: String by SpecItem.unparsed(
+        "formatting_char",
+        "^",
+        "Character to use in shop names for formatting codes instead of §, since § can't be typed into minecraft chat",
+        { key, defVal -> define(key, defVal) { it is String && it.length == 1 } }
+    )
+
     // Might need to debug the config system so we can't have this in the config file
     val DEBUG get() = System.getProperty("shulkershop.debug", "false") == "true"
 

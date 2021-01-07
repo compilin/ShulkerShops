@@ -29,7 +29,7 @@ Here's the current subcommands for (`<…>` indicate a parameter, to replace wit
  * `delete`: Remove the selected shop. Will fail if the shop's inventory is not empty
     * `delete force`: Will delete the shop even if its inventory is not empty
  * `set`: Changes the shop's settings:
-    * `set name <name>`: Change the shop's name, appearing both above the shulker and in the trading GUI. The given name has to contain the player's name unless they have the `make_anonymous` permission.
+    * `set name <name>`: Change the shop's name, appearing both above the shulker and in the trading GUI. The given name has to contain the player's name unless they have the `make_anonymous` permission. Names can also contain formatting codes, see the section below about this.
     * `set color <color>`: Set the shulker color. Accept any dye color, or "default" for the classic shulker light purple.
  * `offers`: Lists the shop's offers
     * `offers add <bought> <sold> <limit>`: Adds a new offer. <bought> and <sold> are quantity + item (accepts @hand/@offhand). Limit is how many times this offer may be used, or `unlimited`. Uses are limited by the shop's stock but you might want to limit some offer's uses, for instance if you're buying multiple things for the same price and are only interested in a limited amount of each of them.
@@ -63,6 +63,10 @@ Selections will time-out after 5 minutes without interaction with the shop.
 
 You may set a use limit on offers to specify how many times they can be used. You can of course also limit an offer's max uses by limiting the stock of the item you're selling in the shop's inventory, but that might not be possible to do individually if several offers sell the same type of item (typically, if your shop buys items for some currency, e.g diamonds). Example: you have 3 offers for buying different items for 1 diamond each, you put 30 diamonds into your shop's inventory and set a limit of 10 on each offer. That way, none of the offers can sell out all the diamonds before the others can be used.
 
+### Formatting codes in shop names
+
+There is a way to put (formatting codes)[https://minecraft.gamepedia.com/Formatting_codes#Color_codes] in shop names. Players can't type the formatting character (`§`) in Minecraft so instead there is a substitution character that they can use instead. By default it is `^` and can be changed in the config. Doing so requires the use_formatted_names permission (since formatting includes "Obfuscated" which can be pretty obnoxious).
+
 Config
 ======
 
@@ -81,3 +85,4 @@ This mod defines a number of permissions. Asterisks* means they are restricted t
  * `make_anonymous`⚠️: Allow giving names to shops that do not contain your username. As of now this is the editor's name, not the owner's, therefore it only makes sense for one's own shops.
  * `give_items`⚠️: Use the `/sshop give` command
  * `force_delete`⚠️: Force-delete a shop, allowing to delete shops with non-empty inventories.
+ * `use_formatted_names`⚠️: Use formatting characters in shop names

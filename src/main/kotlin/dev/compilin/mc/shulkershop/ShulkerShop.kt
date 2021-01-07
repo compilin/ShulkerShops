@@ -231,7 +231,8 @@ class ShulkerShop : Merchant {
         getShulker()?.remove()
         val nbt = CompoundTag()
         val entityTag = CompoundTag()
-        entityTag.putInt("Invulnerable", 1)
+        entityTag.putBoolean("Invulnerable", true)
+        entityTag.putBoolean("Silent", true)
         entityTag.putByte("AttachFace", face.id.toByte())
         nbt.put("EntityTag", entityTag)
         val shulker: ShulkerEntity? = EntityType.SHULKER.spawn(

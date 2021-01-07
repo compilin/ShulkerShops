@@ -116,6 +116,12 @@ class SShopMod : ModInitializer {
             "force_delete", 2,
             "Can delete shops with non-empty inventories",
             "You do not have the permission to force-delete shops"
+        ),
+        USE_FORMATTED_SHOP_NAMES(
+            "use_formatted_names", 2,
+            "Can use formatting codes (https://minecraft.gamepedia.com/Formatting_codes#Color_codes) in shop names",
+            "You do not have the permission to use formatting codes in shop names" // This should not come up, as without the permisison
+        // the formatting will just be disabled
         );
 
         var permissionLevel = defaultPermLevel

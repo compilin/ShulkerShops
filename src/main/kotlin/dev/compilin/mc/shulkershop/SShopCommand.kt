@@ -14,6 +14,7 @@ import com.mojang.brigadier.exceptions.CommandSyntaxException
 import com.mojang.brigadier.tree.CommandNode
 import com.mojang.brigadier.tree.LiteralCommandNode
 import dev.compilin.mc.shulkershop.Config.CREATE_ITEM
+import dev.compilin.mc.shulkershop.Config.FORMATTING_CHAR
 import dev.compilin.mc.shulkershop.Config.SELECTION_TIMEOUT
 import dev.compilin.mc.shulkershop.Config.SELECT_ITEM
 import dev.compilin.mc.shulkershop.SShopMod.Companion.getSelectionByPlayer
@@ -22,7 +23,6 @@ import dev.compilin.mc.shulkershop.SShopMod.PlayerShopSelection
 import dev.compilin.mc.shulkershop.ShulkerShop.Companion.UNLIMITED
 import net.minecraft.command.argument.ItemStackArgument
 import net.minecraft.command.argument.ItemStackArgumentType
-import net.minecraft.command.argument.MessageArgumentType
 import net.minecraft.entity.ItemEntity
 import net.minecraft.entity.mob.ShulkerEntity
 import net.minecraft.entity.player.PlayerEntity
@@ -94,15 +94,12 @@ object SShopCommand {
             ).then(
                 literal("set").then(
                     literal("name").then(
-                        argument("name", MessageArgumentType.message())
+                        argument("name", StringArgumentType.greedyString())
                             .executes(this::executeOnShop)
                     )
                 ).then(
                     colorEnumArgument(
-                        literal("color"),
-                        { _: String, node: LiteralArgumentBuilder<ServerCommandSource> ->
-                            node.executes(this::executeOnShop)
-                        }
+                        literal("color"), { _, node -> node.executes(this::executeOnShop) }
                     ).then(
                         literal("default")
                             .executes(this::executeOnShop)
@@ -396,20 +393,29 @@ object SShopCommand {
         return when (ctx.nodeName(2)) {
             "name" -> {
                 var message: MutableText = LiteralText("")
-                var name: Text = MessageArgumentType.getMessage(ctx, "name")
+                var nameText = StringArgumentType.getString(ctx, "name")
                 val shopHasPlayerName = Pattern.compile(
                     ".*\\b\\Q${player.gameProfile.name}\\E\\b.*",  // Given name contains player's name
                     Pattern.CASE_INSENSITIVE
-                ).matcher(name.asString()).matches()
+                ).matcher(nameText).matches()
+                if (FORMATTING_CHAR in nameText) {
+                    if (USE_FORMATTED_SHOP_NAMES.check(ctx.source)) {
+                        nameText = nameText.replace(Regex("(?<!\\\\)${Regex.escape(FORMATTING_CHAR)}"), "§")
+                    } else {
+                        ctx.source.sendError(LiteralText("You don't have the permission to use formatting codes in shop names! If you did not" +
+                                "mean to use one, you can ignore this message"))
+                    }
+                }
+                var name: MutableText = LiteralText(nameText)
                 if (shop.ownerId == player.uuid &&  // Player is shop's owner
-                    !shopHasPlayerName && MAKE_ANONYMOUS_SHOP.check(player)
+                    !shopHasPlayerName && !MAKE_ANONYMOUS_SHOP.check(player)
                 ) {
                     message.append(
                         LiteralText(
                             " (Note: Your username was prepended as you do not have the permission to make anonymous shops)"
                         ).formatted(Formatting.YELLOW)
                     )
-                    name = LiteralText(player.name.asString() + "'s ")
+                    name = LiteralText("[${player.name.asString()}] ")
                         .append(name)
                 }
                 if (name.asString().length > 50) {
@@ -445,6 +451,8 @@ object SShopCommand {
             else -> throw IllegalArgumentException("Unknown subcommand for /" + ctx.input)
         }
     }
+
+
 
     /*	*****************
 		 DELETE subcommand
